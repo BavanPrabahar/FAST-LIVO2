@@ -1,0 +1,25 @@
+<launch>
+<!-- Launch file for Robosense LiDAR -->
+
+	<arg name="rviz" default="true" />
+
+	<rosparam command="load" file="$(find fast_livo)/config/robosense.yaml" />
+
+	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen">
+		<rosparam file="$(find fast_livo)/config/camera_pinhole.yaml" />
+	</node>
+
+	<group if="$(arg rviz)">
+		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fast_livo)/rviz_cfg/fast_livo2.rviz" />
+	</group>
+
+	<!-- Only needed if your image topic is published compressed (sensor_msgs/CompressedImage).
+	     Your bag topic "/camera_24135744/image_raw" is a raw sensor_msgs/Image, so this is
+	     commented out. Uncomment and fix the topic names if you switch to a compressed feed. -->
+	<!--
+	<node pkg="image_transport" type="republish" name="republish"
+	      args="compressed in:=/camera_24135744/image_raw raw out:=/camera_24135744/image_raw"
+	      output="screen" respawn="true"/>
+	-->
+
+</launch>

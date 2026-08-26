@@ -191,9 +191,13 @@ void LIVMapper::initializeFiles()
 
 void LIVMapper::initializeSubscribersAndPublishers(ros::NodeHandle &nh, image_transport::ImageTransport &it) 
 {
-  sub_pcl = p_pre->lidar_type == AVIA ? 
-            nh.subscribe(lid_topic, 200000, &LIVMapper::livox_pcl_cbk, this): 
-            nh.subscribe(lid_topic, 200000, &LIVMapper::standard_pcl_cbk, this);
+  if (p_pre->lidar_type == AVIA) {
+    sub_pcl = nh.subscribe(lid_topic, 200000, &LIVMapper::livox_pcl_cbk, this);
+  } else if (p_pre->lidar_type == ROBOSENSE) {
+    sub_pcl = nh.subscribe(lid_topic, 200000, &LIVMapper::robosense_pcl_cbk, this);
+  } else {
+    sub_pcl = nh.subscribe(lid_topic, 200000, &LIVMapper::standard_pcl_cbk, this);
+  }
   sub_imu = nh.subscribe(imu_topic, 200000, &LIVMapper::imu_cbk, this);
   sub_img = nh.subscribe(img_topic, 200000, &LIVMapper::img_cbk, this);
   
@@ -766,6 +770,35 @@ void LIVMapper::livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg_i
   sig_buffer.notify_all();
 }
 
+void LIVMapper::robosense_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
+{
+  if (!lidar_en) return;
+  mtx_buffer.lock();
+
+  double cur_head_time = msg->header.stamp.toSec() + lidar_time_offset;
+  if (cur_head_time < last_timestamp_lidar)
+  {
+    ROS_ERROR("lidar loop back, clear buffer");
+    lid_raw_data_buffer.clear();
+  }
+
+  PointCloudXYZI::Ptr ptr(new PointCloudXYZI());
+  p_pre->process(msg, ptr);
+
+  if (!ptr || ptr->empty()) {
+    ROS_ERROR("Received an empty point cloud from Robosense");
+    mtx_buffer.unlock();
+    return;
+  }
+
+  lid_raw_data_buffer.push_back(ptr);
+  lid_header_time_buffer.push_back(cur_head_time);
+  last_timestamp_lidar = cur_head_time;
+
+  mtx_buffer.unlock();
+  sig_buffer.notify_all();
+}
+
 void LIVMapper::imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in)
 {
   if (!imu_en) return;
@@ -1317,7 +1350,7 @@ void LIVMapper::publish_effect_world(const ros::Publisher &pubLaserCloudEffect, 
   }
   sensor_msgs::PointCloud2 laserCloudFullRes3;
   pcl::toROSMsg(*laserCloudWorld, laserCloudFullRes3);
-  laserCloudFullRes3.header.stamp = ros::Time::now();
+laserCloudFullRes3.header.stamp = ros::Time(last_timestamp_lidar);
   laserCloudFullRes3.header.frame_id = "camera_init";
   pubLaserCloudEffect.publish(laserCloudFullRes3);
 }

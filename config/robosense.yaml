@@ -1,0 +1,90 @@
+common:
+  img_topic: "/camera_24264461/image_raw_720"   # front camera — confirm with image_view before trusting this
+  lid_topic: "/rslidar_points"
+  imu_topic: "/imu/data_raw"
+  img_en: 1
+  lidar_en: 1
+  ros_driver_bug_fix: false
+
+extrin_calib:
+  # LiDAR -> IMU  (CALIBRATE THIS! still an identity placeholder)
+  extrinsic_T: [0.0, 0.0, 0.0]
+  extrinsic_R: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+  # LiDAR -> Camera (front), from your r3live_vio table
+  Rcl: [0.0081,-0.9998, 0.0177,
+        -0.0138,-0.0178,-0.9997,
+       0.9999,0.0078,-0.0139]
+  Pcl: [-0.2087,0.0514, -0.3421]
+
+time_offset:
+  imu_time_offset: 0.0
+  img_time_offset: 0.1
+  exposure_time_init: 0.0
+
+preprocess:
+  point_filter_num: 1     # Process every point (set higher only if performance drops)
+  filter_size_surf: 0.0  # Reduced from 0.1 for high-density surface point cloud
+  lidar_type: 7           # ROBOSENSE, confirmed from common_lib.h (7, not 6)
+  scan_line: 128          # Set to your actual RS model's line count (16/32/64/128)
+  blind: 0.5
+
+vio:
+  max_iterations: 5
+  outlier_threshold: 1000
+  img_point_cov: 100
+  patch_size: 8
+  patch_pyrimid_level: 4
+  normal_en: true
+  raycast_en: false
+  inverse_composition_en: false
+  exposure_estimate_en: true
+  inv_expo_cov: 0.1
+
+imu:
+  imu_en: true
+  imu_int_frame: 30
+  acc_cov: 0.5
+  gyr_cov: 0.3
+  b_acc_cov: 0.0001
+  b_gyr_cov: 0.0001
+
+lio:
+  max_iterations: 10     # Increased slightly for better convergence with high-density points
+  dept_err: 0.02
+  beam_err: 0.05
+  min_eigen_value: 0.0025
+  voxel_size: 0.02        # Reduced from 0.5 to keep a fine voxel grid
+  max_layer: 2
+  max_points_num: 200    # Increased max points allowed per voxel
+  layer_init_num: [5, 5, 5, 5, 5]
+
+local_map:
+  map_sliding_en: false
+  half_map_size: 100
+  sliding_thresh: 8
+
+uav:
+  imu_rate_odom: false
+  gravity_align_en: false
+
+publish:
+  dense_map_en: true
+  pub_effect_point_en: true
+  pub_plane_en: false
+  pub_scan_num: 1
+  blind_rgb_points: 0.0
+
+evo:
+  seq_name: "robosense_run"
+  pose_output_en: true   # Set to true if you need trajectory outputs for evaluation
+
+pcd_save:
+  pcd_save_en: true       # ENABLED: Saves the PCD map on exit or during execution
+  type: 0                 # 0: Output map PCD file
+  colmap_output_en: false
+  filter_size_pcd: 0.05   # Fine resolution filtering for saved map (0.0 to disable downsampling entirely)
+  interval: -1            # -1 saves the complete aggregated map when the node shuts down
+
+image_save:
+  img_save_en: false
+  interval: 1  
