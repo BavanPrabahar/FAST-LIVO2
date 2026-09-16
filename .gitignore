@@ -1,2 +1,39 @@
+# ROS workspace
+build/
+devel/
+install/
+.catkin_workspace
+
+# Logs
+Log/
 Log/*
-build/*
+*.log
+
+# C/C++
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# build directory
+build/
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Makefile
+cmake_install.cmake
+install_manifest.txt
