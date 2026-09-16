@@ -1,0 +1,31 @@
+<launch>
+    <!-- FAST-LIVO2 RoboSense Mapping with Online Loop Closure & PGO -->
+    <arg name="rviz" default="true" />
+    <arg name="save_dir" default="$(env HOME)/output_map" />
+    <arg name="pcd_filename" default="drift_free_global_map.pcd" />
+
+    <!-- 1. FAST-LIVO2 Base Mapping Node -->
+    <rosparam command="load" file="$(find fast_livo)/config/robosense.yaml" />
+    <node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen">
+        <rosparam file="$(find fast_livo)/config/camera_pinhole.yaml" />
+    </node>
+
+    <!-- 2. Loop Closure & Pose Graph Optimization Node -->
+    <node pkg="fast_livo" type="fast_livo2_loop_closure.py" name="fast_livo2_loop_closure" output="screen">
+        <param name="odom_topic" value="/aft_mapped_to_init" />
+        <param name="cloud_topic" value="/cloud_registered" />
+        <param name="save_dir" value="$(arg save_dir)" />
+        <param name="pcd_filename" value="$(arg pcd_filename)" />
+        <param name="keyframe_dist_thresh" value="1.0" />
+        <param name="keyframe_deg_thresh" value="15.0" />
+        <param name="sc_dist_thresh" value="0.28" />
+        <param name="icp_fitness_thresh" value="0.60" />
+        <param name="icp_rmse_thresh" value="0.18" />
+        <param name="voxel_size_map" value="0.05" />
+    </node>
+
+    <!-- 3. RViz Visualization -->
+    <group if="$(arg rviz)">
+        <node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fast_livo)/rviz_cfg/fast_livo2.rviz" />
+    </group>
+</launch>

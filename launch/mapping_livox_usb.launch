@@ -1,0 +1,28 @@
+<launch>
+<!-- Launch file for Livox LiDAR, Livox IMU, and USB Camera with Software Synchronization -->
+
+	<arg name="rviz" default="true" />
+
+	<!-- Load FAST-LIVO2 Parameters -->
+	<rosparam command="load" file="$(find fast_livo)/config/livox_usb_cam.yaml" />
+
+	<!-- Run Software Camera Synchronizer Node -->
+	<node pkg="fast_livo" type="software_sync_node.py" name="software_camera_synchronizer" output="screen">
+		<param name="in_topic" value="/usb_image_raw" />
+		<param name="out_topic" value="/usb_image_raw_sync" />
+		<param name="target_width" value="1280" />
+		<param name="target_height" value="720" />
+		<param name="passthrough" value="false" />
+	</node>
+
+	<!-- Main FAST-LIVO2 Mapping Node -->
+	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen">
+		<rosparam file="$(find fast_livo)/config/camera_pinhole.yaml" />
+	</node>
+
+	<!-- RViz Visualization -->
+	<group if="$(arg rviz)">
+		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fast_livo)/rviz_cfg/fast_livo2.rviz" />
+	</group>
+
+</launch>

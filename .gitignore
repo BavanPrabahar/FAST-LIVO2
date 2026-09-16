@@ -1,2 +1,4 @@
 Log/*
 build/*
+__pycache__/
+*.pyc
